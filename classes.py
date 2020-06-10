@@ -86,7 +86,7 @@ class Game:
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.fps = fps
-        self.game_over = False
+        self.is_menu = True
         self.quit = False
         self.is_apple = False
         self.background_color = (0, 0, 0)
@@ -98,8 +98,12 @@ class Game:
         self.snake = Snake((screen_width/2, screen_height/2))
         self.apple = self.drop_apple()
         self.start_position = (self.screen_width/2, self.screen_height/2)
-        self.font = pg.font.SysFont("Arial", 36)
-        self.menu_text = self.font.render("Press enter to start", False, (255, 255, 255))
+        self.font = pg.font.SysFont("arial", 36)
+        self.menu_text = self.font.render("Press enter to start", True, (255, 255, 255))
+        self.death_text = self.font.render("Press enter to start new game, or escape to go to menu",
+                                           True, (255, 255, 255))
+        self.game_states = {"exit": 0, "menu": 1, "game": 2, "death": 3}
+        self.game_state = 1
         random.seed()
 
     def get_event(self):
@@ -131,12 +135,18 @@ class Game:
             new_position[1] += self.screen_height
             self.snake.head.move(new_position)
 
-    def main_cycle(self):
+    def game_cycle(self):
+        self.snake.reset(self.start_position)
         while not self.quit:
             self.screen.fill(self.background_color)
             self.get_event()
             self.snake.move()
-            self.collide()
+            if self.collide():
+                self.try_again()
+                if self.game_state == self.game_states["game"]:
+                    self.snake.reset(self.start_position)
+                else:
+                    return
             self.eat()
             self.set_len(6)
             if not self.is_apple:
@@ -180,13 +190,55 @@ class Game:
             self.drop_apple()
 
     def menu(self):
-        self.screen.fill(self.background_color)
-        pass
+        while not self.quit:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self.quit = True
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_KP_ENTER:
+                        self.game_state = self.game_states["game"]
+                        return
+            self.screen.fill(self.background_color)
+            self.screen.blit(self.menu_text, (self.screen_width / 2 - 100, self.screen_height / 2 - 20))
+            pg.display.update()
+            self.clock.tick(self.fps)
 
     def collide(self):
         snake_body = [segment.body for segment in self.snake.body]
         if self.snake.head.body.collidelist(snake_body) != -1:
-            self.snake.reset(self.start_position)
+            return True
+        else:
+            return False
+
+    def try_again(self):
+        while not self.quit:
+            self.screen.fill(self.background_color)
+            self.screen.blit(self.death_text, (self.screen_width / 2 - 250, self.screen_height / 2 - 20))
+            pg.display.update()
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self.quit = True
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_KP_ENTER:
+                        self.game_state = self.game_states["game"]
+                        return
+                    elif event.key == pg.K_ESCAPE:
+                        self.game_state = self.game_states["menu"]
+                        return
+                    else:
+                        pass
+            self.clock.tick(self.fps)
+
+    def main_cycle(self):
+        while not self.quit:
+            if self.game_state == self.game_states["menu"]:
+                self.menu()
+            elif self.game_state == self.game_states["game"]:
+                self.game_cycle()
+            elif self.game_state == self.game_states["death"]:
+                self.try_again()
+            else:
+                raise StateError("Unexpected game state")
 
 
 class Apple():
@@ -197,3 +249,8 @@ class Apple():
 
     def draw(self, surface):
         pg.draw.rect(surface, self.color, self.body)
+
+
+class StateError(Exception):
+    pass
+
