@@ -86,8 +86,6 @@ class Game:
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.fps = fps
-        self.is_menu = True
-        self.quit = False
         self.is_apple = False
         self.background_color = (0, 0, 0)
         pg.init()
@@ -106,19 +104,16 @@ class Game:
         self.game_state = 1
         random.seed()
 
-    def get_event(self):
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                self.quit = True
-            elif event.type == pg.KEYDOWN:
-                if event.key == pg.K_UP and self.snake.direction != "DOWN":
-                    self.snake.direction = "UP"
-                if event.key == pg.K_DOWN and self.snake.direction != "UP":
-                    self.snake.direction = "DOWN"
-                if event.key == pg.K_RIGHT and self.snake.direction != "LEFT":
-                    self.snake.direction = "RIGHT"
-                if event.key == pg.K_LEFT and self.snake.direction != "RIGHT":
-                    self.snake.direction = "LEFT"
+    def control(self, event):
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_UP and self.snake.direction != "DOWN":
+                self.snake.direction = "UP"
+            if event.key == pg.K_DOWN and self.snake.direction != "UP":
+                self.snake.direction = "DOWN"
+            if event.key == pg.K_RIGHT and self.snake.direction != "LEFT":
+                self.snake.direction = "RIGHT"
+            if event.key == pg.K_LEFT and self.snake.direction != "RIGHT":
+                self.snake.direction = "LEFT"
 
     def border_cross(self):
         new_position = list(self.snake.head.body.topleft)
@@ -137,9 +132,14 @@ class Game:
 
     def game_cycle(self):
         self.snake.reset(self.start_position)
-        while not self.quit:
+        while True:
             self.screen.fill(self.background_color)
-            self.get_event()
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self.game_state = self.game_states["exit"]
+                    return
+                else:
+                    self.control(event)
             self.snake.move()
             if self.collide():
                 self.try_again()
@@ -190,10 +190,11 @@ class Game:
             self.drop_apple()
 
     def menu(self):
-        while not self.quit:
+        while True:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
-                    self.quit = True
+                    self.game_state = self.game_states["exit"]
+                    return
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_KP_ENTER:
                         self.game_state = self.game_states["game"]
@@ -211,13 +212,14 @@ class Game:
             return False
 
     def try_again(self):
-        while not self.quit:
+        while True:
             self.screen.fill(self.background_color)
-            self.screen.blit(self.death_text, (self.screen_width / 2 - 250, self.screen_height / 2 - 20))
+            self.screen.blit(self.death_text, (self.screen_width / 2 - 270, self.screen_height / 2 - 20))
             pg.display.update()
             for event in pg.event.get():
                 if event.type == pg.QUIT:
-                    self.quit = True
+                    self.game_state = self.game_states["exit"]
+                    return
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_KP_ENTER:
                         self.game_state = self.game_states["game"]
@@ -230,13 +232,15 @@ class Game:
             self.clock.tick(self.fps)
 
     def main_cycle(self):
-        while not self.quit:
+        while True:
             if self.game_state == self.game_states["menu"]:
                 self.menu()
             elif self.game_state == self.game_states["game"]:
                 self.game_cycle()
             elif self.game_state == self.game_states["death"]:
                 self.try_again()
+            elif self.game_state == self.game_states["exit"]:
+                break
             else:
                 raise StateError("Unexpected game state")
 
