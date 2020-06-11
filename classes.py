@@ -1,5 +1,6 @@
 import pygame as pg
 import random
+import os
 
 
 class SnakeSegment:
@@ -245,14 +246,20 @@ class Game:
                 raise StateError("Unexpected game state")
 
 
-class Apple():
+class Apple:
     def __init__(self, position):
         self.size = (20, 20)
-        self.color = (230, 0, 0)
-        self.body = pg.Rect(position, self.size)
+        self.color = (0, 0, 0)
+        self.position = position
+        self.body = pg.Rect(self.position, self.size)
+        self.image = pg.image.load("apple_icon.bmp")
+        self.image = self.image.convert()
+        self.image = pg.transform.scale(self.image, (25, 25))
+        self.image.set_colorkey((255, 255, 255))
 
     def draw(self, surface):
         pg.draw.rect(surface, self.color, self.body)
+        surface.blit(self.image, self.position)
 
 
 class StateError(Exception):
