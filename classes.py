@@ -1,6 +1,5 @@
 import pygame as pg
 import random
-import os
 
 
 class SnakeSegment:
@@ -98,8 +97,8 @@ class Game:
         self.apple = self.drop_apple()
         self.start_position = (self.screen_width/2, self.screen_height/2)
         self.font = pg.font.SysFont("arial", 36)
-        self.menu_text = self.font.render("Press enter to start", True, (255, 255, 255))
-        self.death_text = self.font.render("Press enter to start new game, or escape to go to menu",
+        self.menu_text = self.font.render("Press space to start", True, (255, 255, 255))
+        self.death_text = self.font.render("Press space to start new game, or escape to go to menu",
                                            True, (255, 255, 255))
         self.game_states = {"exit": 0, "menu": 1, "game": 2, "death": 3}
         self.game_state = 1
@@ -197,7 +196,7 @@ class Game:
                     self.game_state = self.game_states["exit"]
                     return
                 if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_KP_ENTER:
+                    if event.key == pg.K_SPACE:
                         self.game_state = self.game_states["game"]
                         return
             self.screen.fill(self.background_color)
@@ -222,7 +221,7 @@ class Game:
                     self.game_state = self.game_states["exit"]
                     return
                 if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_KP_ENTER:
+                    if event.key == pg.K_SPACE:
                         self.game_state = self.game_states["game"]
                         return
                     elif event.key == pg.K_ESCAPE:
