@@ -9,9 +9,9 @@ To play, you need the following things:
 pip install pygame
 ```
 ## Usage
- * Run main.py 
+ * Run snake.py 
  ```bash
- python main.py
+ python snake.py
  ```
  * Enjoy! 
 ## TODO

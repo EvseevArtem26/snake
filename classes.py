@@ -169,14 +169,14 @@ class Game:
     def drop_apple(self):
         x = random.randrange(0, self.screen_width - 20, 20)
         y = random.randrange(0, self.screen_height - 20, 20)
-        self.apple = Apple((x, y))
+        self.apple = Apple((x, y),self.background_color)
         while True:
             snake = [segment.body for segment in self.snake.body]
             snake.append(self.snake.head.body)
             if self.apple.body.collidelist(snake) != -1:
                 x = random.randrange(0, self.screen_width - 20, 20)
                 y = random.randrange(0, self.screen_height - 20, 20)
-                self.apple = Apple((x, y))
+                self.apple = Apple((x, y), self.background_color)
             else:
                 break
         self.is_apple = True
@@ -247,9 +247,9 @@ class Game:
 
 
 class Apple:
-    def __init__(self, position):
+    def __init__(self, position, bg_color):
         self.size = (20, 20)
-        self.color = (0, 0, 0)
+        self.color = bg_color
         self.position = position
         self.body = pg.Rect(self.position, self.size)
         self.image = pg.image.load("apple_icon.bmp")
