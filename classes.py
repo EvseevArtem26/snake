@@ -200,7 +200,8 @@ class Game:
                         self.game_state = self.game_states["game"]
                         return
             self.screen.fill(self.background_color)
-            self.screen.blit(self.menu_text, (self.screen_width / 2 - 100, self.screen_height / 2 - 20))
+            self.screen.blit(self.menu_text, (self.screen_width / 2 - self.menu_text.get_width()/2,
+                                              self.screen_height / 2 - self.menu_text.get_height()/2))
             pg.display.update()
             self.clock.tick(self.fps)
 
@@ -214,7 +215,8 @@ class Game:
     def try_again(self):
         while True:
             self.screen.fill(self.background_color)
-            self.screen.blit(self.death_text, (self.screen_width / 2 - 270, self.screen_height / 2 - 20))
+            self.screen.blit(self.death_text, (self.screen_width / 2 - self.death_text.get_width()/2,
+                                               self.screen_height / 2 - self.death_text.get_height()/2))
             pg.display.update()
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -253,7 +255,7 @@ class Apple:
         self.body = pg.Rect(self.position, self.size)
         self.image = pg.image.load("apple_icon.bmp")
         self.image = self.image.convert()
-        self.image = pg.transform.scale(self.image, (25, 25))
+        self.image = pg.transform.scale(self.image, (22, 22))
         self.image.set_colorkey((255, 255, 255))
 
     def draw(self, surface):
