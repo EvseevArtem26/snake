@@ -1,4 +1,5 @@
 import pygame as pg
+import pygame_menu as pgMenu
 import random
 
 
@@ -95,6 +96,18 @@ class Game:
         self.clock = pg.time.Clock()
         self.snake = Snake((screen_width/2, screen_height/2))
         self.apple = self.drop_apple()
+        self.theme = pgMenu.themes.THEME_DARK.copy()
+        self.theme.background_color = self.background_color
+        self.theme.title_background_color = self.background_color
+        self.menu = pgMenu.Menu(self.screen_height, self.screen_width, "", theme=self.theme)
+        self.menu.add_image("snake_menu_img.png", scale=(1.2, 0.9))
+        self.menu.add_button("Play", self.start_game)
+        self.menu.add_selector("Difficulty", [("Easy", 15),
+                                              ("Normal", 20),
+                                              ("Hard", 30),
+                                              ("Insane", 45)],
+                               onchange=self.set_difficulty)
+        self.menu.add_button("Exit", self.exit)
         self.start_position = (self.screen_width/2, self.screen_height/2)
         self.font = pg.font.SysFont("arial", 36)
         self.menu_text = self.font.render("Press space to start", True, (255, 255, 255))
@@ -189,19 +202,23 @@ class Game:
                 self.snake.add_segment(self.snake.body[-1].body.topleft)
             self.drop_apple()
 
-    def menu(self):
+    def menu_cycle(self):
         while True:
-            for event in pg.event.get():
+            events = pg.event.get()
+            for event in events:
                 if event.type == pg.QUIT:
                     self.game_state = self.game_states["exit"]
                     return
-                if event.type == pg.KEYDOWN:
+                """if event.type == pg.KEYDOWN:
                     if event.key == pg.K_SPACE:
                         self.game_state = self.game_states["game"]
-                        return
+                        return"""
             self.screen.fill(self.background_color)
             self.screen.blit(self.menu_text, (self.screen_width / 2 - self.menu_text.get_width()/2,
                                               self.screen_height / 2 - self.menu_text.get_height()/2))
+            if self.menu.is_enabled():
+                self.menu.update(events)
+                self.menu.draw(self.screen)
             pg.display.update()
             self.clock.tick(self.fps)
 
@@ -236,7 +253,7 @@ class Game:
     def main_cycle(self):
         while True:
             if self.game_state == self.game_states["menu"]:
-                self.menu()
+                self.menu_cycle()
             elif self.game_state == self.game_states["game"]:
                 self.game_cycle()
             elif self.game_state == self.game_states["death"]:
@@ -245,6 +262,17 @@ class Game:
                 break
             else:
                 raise StateError("Unexpected game state")
+
+    def set_difficulty(self, difficulty, fps):
+        self.fps = fps
+
+    def start_game(self):
+        self.game_state = self.game_states["game"]
+        self.game_cycle()
+
+    def exit(self):
+        self.game_state = self.game_states["exit"]
+        pgMenu.events.EXIT()
 
 
 class Apple:
