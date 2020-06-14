@@ -107,7 +107,7 @@ class Game:
                                               ("Hard", 30),
                                               ("Insane", 45)],
                                onchange=self.set_difficulty)
-        self.menu.add_button("Exit", self.exit)
+        self.menu.add_button("Exit", pgMenu.events.EXIT)
         self.start_position = (self.screen_width/2, self.screen_height/2)
         self.font = pg.font.SysFont("arial", 36)
         self.menu_text = self.font.render("Press space to start", True, (255, 255, 255))
@@ -269,10 +269,6 @@ class Game:
     def start_game(self):
         self.game_state = self.game_states["game"]
         self.game_cycle()
-
-    def exit(self):
-        self.game_state = self.game_states["exit"]
-        pgMenu.events.EXIT()
 
 
 class Apple:
