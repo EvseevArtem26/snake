@@ -100,10 +100,6 @@ class Game:
         self.deathMenu = DeathMenu(self.screen_width, self.screen_height, self)
         self.pauseMenu = PauseMenu(self.screen_width, self.screen_height, self)
         self.start_position = (self.screen_width/2, self.screen_height/2)
-        self.font = pg.font.SysFont("arial", 36)
-        self.menu_text = self.font.render("Press space to start", True, (255, 255, 255))
-        self.death_text = self.font.render("Press space to start new game, or escape to go to menu",
-                                           True, (255, 255, 255))
         self.game_states = {"exit": 0, "menu": 1, "game": 2, "death": 3}
         self.game_state = 1
         random.seed()
