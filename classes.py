@@ -1,5 +1,5 @@
 import pygame as pg
-import pygame_menu as pgMenu
+import pygame_menu as pg_menu
 import random
 
 
@@ -96,18 +96,9 @@ class Game:
         self.clock = pg.time.Clock()
         self.snake = Snake((screen_width/2, screen_height/2))
         self.apple = self.drop_apple()
-        self.theme = pgMenu.themes.THEME_DARK.copy()
-        self.theme.background_color = self.background_color
-        self.theme.title_background_color = self.background_color
-        self.menu = pgMenu.Menu(self.screen_height, self.screen_width, "", theme=self.theme)
-        self.menu.add_image("snake_menu_img.png", scale=(1.2, 0.9))
-        self.menu.add_button("Play", self.start_game)
-        self.menu.add_selector("Difficulty", [("Easy", 15),
-                                              ("Normal", 20),
-                                              ("Hard", 30),
-                                              ("Insane", 45)],
-                               onchange=self.set_difficulty)
-        self.menu.add_button("Exit", pgMenu.events.EXIT)
+        self.mainMenu = MainMenu(self.screen_width, self.screen_height, self)
+        self.deathMenu = DeathMenu(self.screen_width, self.screen_height, self)
+        self.pauseMenu = PauseMenu(self.screen_width, self.screen_height, self)
         self.start_position = (self.screen_width/2, self.screen_height/2)
         self.font = pg.font.SysFont("arial", 36)
         self.menu_text = self.font.render("Press space to start", True, (255, 255, 255))
@@ -155,11 +146,8 @@ class Game:
                     self.control(event)
             self.snake.move()
             if self.collide():
-                self.try_again()
-                if self.game_state == self.game_states["game"]:
-                    self.snake.reset(self.start_position)
-                else:
-                    return
+                self.game_state = self.game_states["death"]
+                return
             self.eat()
             self.set_len(6)
             if not self.is_apple:
@@ -203,22 +191,15 @@ class Game:
             self.drop_apple()
 
     def menu_cycle(self):
-        while True:
+        while self.game_state == self.game_states["menu"]:
             events = pg.event.get()
             for event in events:
                 if event.type == pg.QUIT:
                     self.game_state = self.game_states["exit"]
                     return
-                """if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_SPACE:
-                        self.game_state = self.game_states["game"]
-                        return"""
+
             self.screen.fill(self.background_color)
-            self.screen.blit(self.menu_text, (self.screen_width / 2 - self.menu_text.get_width()/2,
-                                              self.screen_height / 2 - self.menu_text.get_height()/2))
-            if self.menu.is_enabled():
-                self.menu.update(events)
-                self.menu.draw(self.screen)
+            self.mainMenu.display(self.screen, events)
             pg.display.update()
             self.clock.tick(self.fps)
 
@@ -230,24 +211,15 @@ class Game:
             return False
 
     def try_again(self):
-        while True:
+        while self.game_state == self.game_states["death"]:
             self.screen.fill(self.background_color)
-            self.screen.blit(self.death_text, (self.screen_width / 2 - self.death_text.get_width()/2,
-                                               self.screen_height / 2 - self.death_text.get_height()/2))
-            pg.display.update()
-            for event in pg.event.get():
+            events = pg.event.get()
+            for event in events:
                 if event.type == pg.QUIT:
                     self.game_state = self.game_states["exit"]
                     return
-                if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_SPACE:
-                        self.game_state = self.game_states["game"]
-                        return
-                    elif event.key == pg.K_ESCAPE:
-                        self.game_state = self.game_states["menu"]
-                        return
-                    else:
-                        pass
+            self.deathMenu.display(self.screen, events)
+            pg.display.update()
             self.clock.tick(self.fps)
 
     def main_cycle(self):
@@ -290,3 +262,58 @@ class Apple:
 class StateError(Exception):
     pass
 
+
+class Menu:
+    def __init__(self, width, height, title, background_color):
+        self.theme = pg_menu.themes.THEME_DARK.copy()
+        self.theme.background_color = background_color
+        self.theme.title_background_color = background_color
+        self.theme.widget_font_color = (255, 255, 255, 150)
+        self.body = pg_menu.menu.Menu(width=width, height=height, title=title, theme=self.theme)
+
+    def display(self, screen, events):
+        if self.body.is_enabled():
+            self.body.update(events)
+            self.body.draw(screen)
+
+
+class MainMenu(Menu):
+    def __init__(self, width, height, game):
+        Menu.__init__(self, width, height, "", (0, 0, 0))
+        self.body.add_image("snake_menu_img.png", scale=(1.2, 0.9))
+        self.body.add_button("Play", game.start_game)
+        self.body.add_selector("Difficulty", [("Easy", 15),
+                                              ("Normal", 20),
+                                              ("Hard", 30),
+                                              ("Insane", 45)],
+                               onchange=game.set_difficulty)
+        self.body.add_button("Exit", pg_menu.events.EXIT)
+
+
+class PauseMenu(Menu):
+    def __init__(self, width, height, game):
+        Menu.__init__(self, width, height, title="Pause", background_color=(0, 0, 0, 100))
+        self.body.add_button("Resume", pg_menu.events.CLOSE)
+        self.body.add_button("Go to menu", self.to_menu, game)
+
+    @staticmethod
+    def to_menu(game):
+        game.game_state = game.game_states["menu"]
+
+
+class DeathMenu(Menu):
+    def __init__(self, width, height, game):
+        Menu.__init__(self, width, height, title="", background_color=(0, 0, 0, 100))
+        self.body.add_label("YOU'RE DEAD", font_size=40)
+        self.body.add_vertical_margin(150)
+        self.body.add_button("Try again", self.try_again, game, )
+        self.body.add_button("Go to menu", self.to_menu, game)
+
+    @staticmethod
+    def try_again(game):
+        game.game_state = game.game_states["game"]
+        game.snake.reset(game.start_position)
+
+    @staticmethod
+    def to_menu(game):
+        game.game_state = game.game_states["menu"]
