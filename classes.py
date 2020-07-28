@@ -87,6 +87,7 @@ class Game:
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.fps = fps
+        self.difficulty = 5
         self.is_apple = False
         self.background_color = (0, 0, 0)
         pg.init()
@@ -131,6 +132,7 @@ class Game:
             self.snake.head.move(new_position)
 
     def game_cycle(self):
+        counter = 0
         self.snake.reset(self.start_position)
         while True:
             self.screen.fill(self.background_color)
@@ -140,10 +142,11 @@ class Game:
                     return
                 else:
                     self.control(event)
-            self.snake.move()
-            if self.collide():
-                self.game_state = self.game_states["death"]
-                return
+            if counter % self.difficulty == 0:
+                self.snake.move()
+                if self.collide():
+                    self.game_state = self.game_states["death"]
+                    return
             self.eat()
             self.set_len(6)
             if not self.is_apple:
@@ -153,6 +156,7 @@ class Game:
             self.border_cross()
             self.snake.draw(self.screen)
             pg.display.update()
+            counter += 1
             self.clock.tick(self.fps)
 
     def set_len(self, length):
@@ -231,8 +235,8 @@ class Game:
             else:
                 raise StateError("Unexpected game state")
 
-    def set_difficulty(self, difficulty, fps):
-        self.fps = fps
+    def set_difficulty(self, difficulty, difficulty_modifier):
+        self.difficulty = difficulty_modifier
 
     def start_game(self):
         self.game_state = self.game_states["game"]
@@ -278,10 +282,10 @@ class MainMenu(Menu):
         Menu.__init__(self, width, height, "", (0, 0, 0))
         self.body.add_image("snake_menu_img.png", scale=(1.2, 0.9))
         self.body.add_button("Play", game.start_game)
-        self.body.add_selector("Difficulty", [("Easy", 15),
-                                              ("Normal", 20),
-                                              ("Hard", 30),
-                                              ("Insane", 45)],
+        self.body.add_selector("Difficulty", [("Easy", 5),
+                                              ("Normal", 4),
+                                              ("Hard", 3),
+                                              ("Insane", 2)],
                                onchange=game.set_difficulty)
         self.body.add_button("Exit", pg_menu.events.EXIT)
 
