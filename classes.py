@@ -103,6 +103,7 @@ class Game:
         self.start_position = (self.screen_width/2, self.screen_height/2)
         self.game_states = {"exit": 0, "menu": 1, "game": 2, "death": 3}
         self.game_state = 1
+        self.onPause = False
         random.seed()
 
     def control(self, event):
@@ -134,27 +135,33 @@ class Game:
     def game_cycle(self):
         counter = 0
         self.snake.reset(self.start_position)
-        while True:
+        while self.game_state == self.game_states["game"]:
             self.screen.fill(self.background_color)
-            for event in pg.event.get():
+            events = pg.event.get()
+            for event in events:
                 if event.type == pg.QUIT:
                     self.game_state = self.game_states["exit"]
                     return
-                else:
+                elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    self.onPause = True
+                if not self.onPause:
                     self.control(event)
-            if counter % self.difficulty == 0:
-                self.snake.move()
-                if self.collide():
-                    self.game_state = self.game_states["death"]
-                    return
-            self.eat()
-            self.set_len(6)
-            if not self.is_apple:
-                self.drop_apple()
+            if self.onPause:
+                self.pauseMenu.display(self.screen, events)
             else:
-                self.apple.draw(self.screen)
-            self.border_cross()
-            self.snake.draw(self.screen)
+                if counter % self.difficulty == 0:
+                    self.snake.move()
+                    if self.collide():
+                        self.game_state = self.game_states["death"]
+                        return
+                self.eat()
+                self.set_len(6)
+                if not self.is_apple:
+                    self.drop_apple()
+                else:
+                    self.apple.draw(self.screen)
+                self.border_cross()
+                self.snake.draw(self.screen)
             pg.display.update()
             counter += 1
             self.clock.tick(self.fps)
@@ -169,7 +176,7 @@ class Game:
     def drop_apple(self):
         x = random.randrange(0, self.screen_width - 20, 20)
         y = random.randrange(0, self.screen_height - 20, 20)
-        self.apple = Apple((x, y),self.background_color)
+        self.apple = Apple((x, y), self.background_color)
         while True:
             snake = [segment.body for segment in self.snake.body]
             snake.append(self.snake.head.body)
@@ -282,10 +289,10 @@ class MainMenu(Menu):
         Menu.__init__(self, width, height, "", (0, 0, 0))
         self.body.add_image("snake_menu_img.png", scale=(1.2, 0.9))
         self.body.add_button("Play", game.start_game)
-        self.body.add_selector("Difficulty", [("Easy", 5),
-                                              ("Normal", 4),
-                                              ("Hard", 3),
-                                              ("Insane", 2)],
+        self.body.add_selector("Difficulty ", [("Easy", 5),
+                                               ("Normal", 4),
+                                               ("Hard", 3),
+                                               ("Insane", 2)],
                                onchange=game.set_difficulty)
         self.body.add_button("Exit", pg_menu.events.EXIT)
 
@@ -293,12 +300,18 @@ class MainMenu(Menu):
 class PauseMenu(Menu):
     def __init__(self, width, height, game):
         Menu.__init__(self, width, height, title="Pause", background_color=(0, 0, 0, 100))
-        self.body.add_button("Resume", pg_menu.events.CLOSE)
+        self.body.add_button("Resume", self.resume, game)
         self.body.add_button("Go to menu", self.to_menu, game)
 
     @staticmethod
     def to_menu(game):
+        game.onPause = False
         game.game_state = game.game_states["menu"]
+
+    @staticmethod
+    def resume(game):
+        game.game_state = game.game_states["game"]
+        game.onPause = False
 
 
 class DeathMenu(Menu):
